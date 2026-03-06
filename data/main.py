@@ -5,17 +5,19 @@ from faker import Faker
 from faker.providers import BaseProvider
 from zipfile import ZipFile
 
-# ==== Total Records Summarization ====
-"""
-7 Tables:
-- Department: 5
-- Staff: 200 (80 doctors, 90 nurses, 30 receptionists)
-- Patients: 1,000,000
-- Patient-Doctor: 1,000,000 (each patient has a doctor)
-- Appointments: 1,000,000 (each appointment has a doctor and a patient
-- Medical Records: 1,000,000 (each record has a patient and an appointment)
-- Billing: 1,000,000 (each billing has a patient and a receptionist)
-"""
+# ==== Configuration: Set record counts for each table ====
+CONFIG = {
+    'departments': 5,
+    'staff': 200,              # Total staff count
+    'staff_doctors': 80,       # Number of doctors
+    'staff_nurses': 90,        # Number of nurses
+    'staff_receptionists': 30, # Number of receptionists
+    'patients': 1_000_000,
+    'patient_doctor': 1_000_000,
+    'appointments': 1_000_000,
+    'medical_records': 1_000_000,
+    'billing': 1_000_000,
+}
 
 # ==== 1) Tiny PhysicalProvider for height & weight ====
 class PhysicalProvider(BaseProvider):
@@ -37,17 +39,18 @@ os.makedirs(output_dir, exist_ok=True)
 doctor_ids = []
 receptionist_ids = []
 nurse_ids = []
-patient_ids = list(range(1, 1_000_001))  # All patient IDs from 1 to 1,000,000
-appointment_ids = list(range(1, 1_000_001))  # All appointment IDs from 1 to 1,000,000
 departments = {}  # Will store department_id -> department_name mapping
 
 def generate_departments():
-    """Generate 5 departments"""
+    """Generate departments based on CONFIG['departments']"""
     global departments
     departments.clear()
     
     file_path = os.path.join(output_dir, 'departments.csv')
     dept_names = ['Cardiology','Neurology','Oncology','Pediatrics','Emergency']
+    
+    # Limit to configured count
+    dept_names = dept_names[:CONFIG['departments']]
     
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -59,10 +62,10 @@ def generate_departments():
                 name,
                 fake.city()
             ])
-    print(f"Generated departments.csv")
+    print(f"Generated departments.csv ({len(dept_names)} records)")
 
 def generate_staff():
-    """Generate 200 staff members: 80 doctors, 90 nurses, 30 receptionists"""
+    """Generate staff members based on CONFIG"""
     global doctor_ids, receptionist_ids, nurse_ids, departments
     doctor_ids.clear()
     receptionist_ids.clear()
@@ -75,11 +78,11 @@ def generate_staff():
     
     file_path = os.path.join(output_dir, 'staff.csv')
     
-    # Define exact counts for each role
+    # Define exact counts for each role from CONFIG
     staff_roles = (
-        ['Doctor'] * 80 +
-        ['Nurse'] * 90 +
-        ['Receptionist'] * 30
+        ['Doctor'] * CONFIG['staff_doctors'] +
+        ['Nurse'] * CONFIG['staff_nurses'] +
+        ['Receptionist'] * CONFIG['staff_receptionists']
     )
     
     # Specializations mapping to departments
@@ -100,13 +103,13 @@ def generate_staff():
             'staff_id','last_name','first_name','gender',
             'role','contact','specialization','department_id','doctor_id'
         ])
-        for sid in range(1, 201):  # 200 staff members total
+        for sid in range(1, CONFIG['staff'] + 1):
             role = staff_roles[sid - 1]  # Get role from predefined list
             last = fake.last_name()
             first = fake.first_name()
             gender = random.choice(['Male','Female'])
             contact = fake.phone_number()
-            dept_id = random.randint(1,5)
+            dept_id = random.randint(1, len(departments))
             dept_name = departments[dept_id]
             
             if role == 'Doctor':
@@ -134,16 +137,10 @@ def generate_staff():
                 role, contact, spec, dept_id, doc_fk
             ])
     
-    print(f"Generated staff.csv (80 doctors, 90 nurses, 30 receptionists = 200 total)")
-
-def get_doctor_department(doctor_id):
-    """Helper function to get department of a doctor (simplified for this example)"""
-    # In a real scenario, you'd read from the CSV or maintain a mapping
-    # For now, we'll use a simple hash to distribute doctors across departments
-    return ((doctor_id - 1) % 5) + 1
+    print(f"Generated staff.csv ({CONFIG['staff_doctors']} doctors, {CONFIG['staff_nurses']} nurses, {CONFIG['staff_receptionists']} receptionists = {CONFIG['staff']} total)")
 
 def generate_patients():
-    """Generate 1 million patients without gender column"""
+    """Generate patients based on CONFIG['patients']"""
     file_path = os.path.join(output_dir, 'patients.csv')
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -152,7 +149,7 @@ def generate_patients():
             'height','weight','date_of_birth',
             'address','contact','email'
         ])
-        for pid in range(1,1_000_001):
+        for pid in range(1, CONFIG['patients'] + 1):
             writer.writerow([
                 pid,
                 fake.last_name(),
@@ -166,10 +163,10 @@ def generate_patients():
             ])
             if pid % 100000 == 0:
                 print(f"   Generated {pid:,} patients...")
-    print(f"Generated patients.csv (1,000,000 records) - Gender column removed")
+    print(f"Generated patients.csv ({CONFIG['patients']:,} records)")
 
 def generate_patient_doctor():
-    """Generate 1 million patient-doctor relationships with valid doctor IDs"""
+    """Generate patient-doctor relationships based on CONFIG['patient_doctor']"""
     if not doctor_ids:
         print("Warning: No doctors found. Please generate staff first.")
         return
@@ -180,10 +177,10 @@ def generate_patient_doctor():
         writer.writerow([
             'patient_doctor_id','patient_id','doctor_id'
         ])
-        for pd_id in range(1,1_000_001):
+        for pd_id in range(1, CONFIG['patient_doctor'] + 1):
             # Use sequential patient IDs and valid doctor IDs
-            patient_id = pd_id  # Sequential patient IDs from 1 to 1,000,000
-            doctor_id = random.choice(doctor_ids)  # Random valid doctor from the 80 doctors
+            patient_id = pd_id  # Sequential patient IDs
+            doctor_id = random.choice(doctor_ids)  # Random valid doctor
             
             writer.writerow([
                 pd_id,
@@ -192,10 +189,10 @@ def generate_patient_doctor():
             ])
             if pd_id % 100000 == 0:
                 print(f"   Generated {pd_id:,} patient-doctor relationships...")
-    print("Generated patient_doctor.csv (1,000,000 records) - Using valid doctor IDs only")
+    print(f"Generated patient_doctor.csv ({CONFIG['patient_doctor']:,} records)")
 
 def generate_appointments():
-    """Generate 1 million appointments with valid doctor and patient IDs"""
+    """Generate appointments based on CONFIG['appointments']"""
     if not doctor_ids:
         print("Warning: No doctors found. Please generate staff first.")
         return
@@ -209,11 +206,11 @@ def generate_appointments():
         writer.writerow([
             'appointment_id','purpose','date_time','status','doctor_id','patient_id'
         ])
-        for aid in range(1,1_000_001):
+        for aid in range(1, CONFIG['appointments'] + 1):
             # Use sequential appointment and patient IDs, valid doctor IDs
             appointment_id = aid
-            patient_id = aid  # Sequential patient IDs from 1 to 1,000,000
-            doctor_id = random.choice(doctor_ids)  # Random valid doctor from the 80 doctors
+            patient_id = aid  # Sequential patient IDs
+            doctor_id = random.choice(doctor_ids)  # Random valid doctor
             
             writer.writerow([
                 appointment_id,
@@ -225,10 +222,10 @@ def generate_appointments():
             ])
             if aid % 100000 == 0:
                 print(f"   Generated {aid:,} appointments...")
-    print("Generated appointments.csv (1,000,000 records) - Using valid foreign keys")
+    print(f"Generated appointments.csv ({CONFIG['appointments']:,} records)")
 
 def generate_medical_records():
-    """Generate 1 million medical records with valid patient and appointment IDs"""
+    """Generate medical records based on CONFIG['medical_records']"""
     file_path = os.path.join(output_dir, 'medical_records.csv')
     with open(file_path, 'w', newline='') as f:
         writer = csv.writer(f)
@@ -236,11 +233,11 @@ def generate_medical_records():
             'record_id','prescription','diagnosis',
             'lab_result','treatment','patient_id','appointment_id'
         ])
-        for rid in range(1,1_000_001):
+        for rid in range(1, CONFIG['medical_records'] + 1):
             # Use sequential IDs to ensure all foreign keys exist
             record_id = rid
-            patient_id = rid  # Sequential patient IDs from 1 to 1,000,000
-            appointment_id = rid  # Sequential appointment IDs from 1 to 1,000,000
+            patient_id = rid  # Sequential patient IDs
+            appointment_id = rid  # Sequential appointment IDs
             
             writer.writerow([
                 record_id,
@@ -253,10 +250,10 @@ def generate_medical_records():
             ])
             if rid % 100000 == 0:
                 print(f"   Generated {rid:,} medical records...")
-    print("Generated medical_records.csv (1,000,000 records) - Using valid foreign keys")
+    print(f"Generated medical_records.csv ({CONFIG['medical_records']:,} records)")
 
 def generate_billing():
-    """Generate 1 million billing records with valid receptionist and patient IDs"""
+    """Generate billing records based on CONFIG['billing']"""
     if not receptionist_ids:
         print("Warning: No receptionists found. Please generate staff first.")
         return
@@ -269,7 +266,7 @@ def generate_billing():
             'lab_test_fee','consultation_fee','total_amount',
             'payment_status','receptionist_id','patient_id'
         ])
-        for bid in range(1,1_000_001):
+        for bid in range(1, CONFIG['billing'] + 1):
             # Calculate fees
             tf = round(random.uniform(100.00,1000.00),2)
             mf = round(random.uniform(20.00,500.00),2)
@@ -279,8 +276,8 @@ def generate_billing():
             
             # Use sequential billing and patient IDs, valid receptionist IDs
             billing_id = bid
-            patient_id = bid  # Sequential patient IDs from 1 to 1,000,000
-            receptionist_id = random.choice(receptionist_ids)  # Random valid receptionist from the 30 receptionists
+            patient_id = bid  # Sequential patient IDs
+            receptionist_id = random.choice(receptionist_ids)  # Random valid receptionist
             
             writer.writerow([
                 billing_id, tf, mf, lf, cf, total,
@@ -290,7 +287,7 @@ def generate_billing():
             ])
             if bid % 100000 == 0:
                 print(f"   Generated {bid:,} billing records...")
-    print("Generated billing.csv (1,000,000 records) - Using valid foreign keys")
+    print(f"Generated billing.csv ({CONFIG['billing']:,} records)")
 
 def create_zip():
     """Create a zip file with all CSV files"""
@@ -307,6 +304,7 @@ def create_zip():
 def generate_all():
     """Generate all tables in the correct order"""
     print("Starting hospital data generation...\n")
+    print(f"Configuration: {CONFIG}\n")
     
     generate_departments()
     generate_staff()

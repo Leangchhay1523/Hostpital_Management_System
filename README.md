@@ -15,7 +15,7 @@ The main objectives of this project are:
 - Generate and work with **large synthetic datasets** to evaluate database performance.
 - Apply **indexing strategies** to improve query efficiency.
 
---
+---
 
 ## Database Overview
 
@@ -36,10 +36,20 @@ The database organizes hospital data into structured tables and relationships, e
 ### Perequisites:
   - PostgreSQ
   - Python 3.x installed for running SQL scripts and generating synthetic data.
+### Step-by-Step Project Running
+
+- Clone the repository
+```bash
+git clone https://github.com/Leangchhay1523/Hostpital_Management_System
+```
+- Run the DDL script to create the database schem
+- Generate data using the provided Python script
+```bash
+cd data
 
 
 
-## C
+## Contact
 
 - GitHub: [leangchhay1523](https://github.com/leangchhay1523)
 - Linkedin: [Kimleangchhay Song](https://www.linkedin.com/in/leang-chhay-9a1b4a1b2)
