@@ -12,12 +12,18 @@ db_password = os.getenv('DB_PASSWORD')
 db_host = os.getenv('DB_HOST')
 db_port = os.getenv('DB_PORT')
 
+# Timestamp file path
+TIMESTAMP_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "last_full_backup_timestamp.txt")
+
 def save_last_backup_time(timestamp_str):
-    with open("last_full_backup_timestamp.txt", "w") as f:
+    with open(TIMESTAMP_FILE, "w") as f:
         f.write(timestamp_str)
 
-def full_backup(backup_dir="./database/backup_and_recovery/full_backup"):
+def full_backup(backup_dir=None):
     """Perform a full backup for PostgreSQL database using pg_dump."""
+    if backup_dir is None:
+        backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backup_and_recovery", "full_backup")
+    
     try:
         os.makedirs(backup_dir, exist_ok=True)
 
@@ -37,7 +43,7 @@ def full_backup(backup_dir="./database/backup_and_recovery/full_backup"):
         subprocess.run(cmd, check=True)
         print(f"Full backup created: {backup_file}")
 
-        # Save timestamp in the correct format
+        # Save timestamp
         save_last_backup_time(timestamp)
         return backup_file
 
@@ -48,6 +54,7 @@ def full_backup(backup_dir="./database/backup_and_recovery/full_backup"):
     finally:
         os.environ.pop("PGPASSWORD", None)
 
-# Run full backup
-backup_dir = "./database/backup_and_recovery/full_backup"
-full_backup(backup_dir)
+# Run full backup if executed directly
+if __name__ == "__main__":
+    backup_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backup_and_recovery", "full_backup")
+    full_backup(backup_dir)

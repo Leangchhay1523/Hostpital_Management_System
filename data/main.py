@@ -8,15 +8,15 @@ from zipfile import ZipFile
 # ==== Configuration: Set record counts for each table ====
 CONFIG = {
     'departments': 5,
-    'staff': 200,              # Total staff count
-    'staff_doctors': 80,       # Number of doctors
-    'staff_nurses': 90,        # Number of nurses
-    'staff_receptionists': 30, # Number of receptionists
-    'patients': 1_000_000,
-    'patient_doctor': 1_000_000,
-    'appointments': 1_000_000,
-    'medical_records': 1_000_000,
-    'billing': 1_000_000,
+    'staff': 100,              # Total staff count
+    'staff_doctors': 30,       # Number of doctors
+    'staff_nurses': 20,        # Number of nurses
+    'staff_receptionists': 50, # Number of receptionists
+    'patients': 100,
+    'patient_doctor': 100,
+    'appointments': 100,
+    'medical_records': 100,
+    'billing': 100,
 }
 
 # ==== 1) Tiny PhysicalProvider for height & weight ====
@@ -32,7 +32,7 @@ fake.add_provider(PhysicalProvider)
 random.seed(42)
 
 # ==== 3) Create output directory ====
-output_dir = 'generated_data'
+output_dir = 'data/generated_data'
 os.makedirs(output_dir, exist_ok=True)
 
 # Global variables to store IDs for foreign key relationships
