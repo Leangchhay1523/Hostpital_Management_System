@@ -6,6 +6,9 @@ A comprehensive PostgreSQL-based Hospital Management System with role-based acce
 
 ## Table of Contents
 
+<details>
+<summary><strong>Table of Contents (Click to Expand)</strong></summary>
+
 - [Hospital Management System Database](#hospital-management-system-database)
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
@@ -61,6 +64,8 @@ A comprehensive PostgreSQL-based Hospital Management System with role-based acce
   - [Contact](#contact)
   - [License](#license)
 
+</details>
+
 ---
 
 ## Overview
@@ -79,7 +84,7 @@ This project implements a complete Hospital Management System database using Pos
 
 - **7 Core Tables**: department, staff, patient, patient_doctor, appointment, medical_record, billing
 - **User Management**: Admin, Doctor, Nurse, and Receptionist roles with granular permissions
-- **Automated Backups**: Full backup (weekly) and incremental backup (daily)
+- **Backups**: Full backup (weekly) and incremental backup (daily)
 - **Data Generation**: Python script to generate up to 1 million+ records for performance testing
 - **Optimized Queries**: Indexed columns and pre-written complex DQL queries
 - **Triggers & Procedures**: Automatic total calculation, timestamp updates, and reusable procedures
