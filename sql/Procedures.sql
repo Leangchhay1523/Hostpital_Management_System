@@ -1,474 +1,495 @@
--- Appointment Table
-    -- Add appointment record
+-- ============================================
+-- HOSPITAL MANAGEMENT SYSTEM - PROCEDURES
+-- Database: PostgreSQL
+-- ============================================
+
+-- ============================================
+-- APPOINTMENT PROCEDURES
+-- ============================================
+
+-- Add appointment record
 CREATE OR REPLACE PROCEDURE AddAppointmentRecord(
-    IN INPUT_PURPOSE VARCHAR(255), 
-    IN INPUT_DATE_TIME TIMESTAMP, 
-    IN INPUT_STATUS VARCHAR(50), 
-    IN INPUT_DOCTOR_ID INT, 
-    IN INPUT_PATIENT_ID INT)
+    IN input_purpose VARCHAR(255), 
+    IN input_date_time TIMESTAMP, 
+    IN input_status VARCHAR(50), 
+    IN input_doctor_id INT, 
+    IN input_patient_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO APPOINTMENT(PURPOSE, DATE_TIME, STATUS, DOCTOR_ID, PATIENT_ID)
-    VALUES (INPUT_PURPOSE, INPUT_DATE_TIME, INPUT_STATUS, INPUT_DOCTOR_ID, INPUT_PATIENT_ID);
+    INSERT INTO appointment(purpose, date_time, status, doctor_id, patient_id)
+    VALUES (input_purpose, input_date_time, input_status, input_doctor_id, input_patient_id);
 END;
 $$;
 
-	-- Modify appointment status
+-- Modify appointment status
 CREATE OR REPLACE PROCEDURE UpdateAppointmentStatus(
-    IN INPUT_STATUS VARCHAR(50),
-    IN INPUT_APPOINTMENT_ID INT
+    IN input_status VARCHAR(50),
+    IN input_appointment_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-    UPDATE APPOINTMENT
-    SET STATUS = IFNULL(INPUT_STATUS, STATUS)
-    WHERE APPOINTMENT_ID = INPUT_APPOINTMENT_ID;
+    UPDATE appointment
+    SET status = COALESCE(input_status, status)
+    WHERE appointment_id = input_appointment_id;
 END;
 $$;
 
-	-- View appointment of a doctor by date
-CREATE OR REPLACE PROCEDURE ViewAppointmentByDate(IN INPUT_DATE DATE)
+-- View appointment by date
+CREATE OR REPLACE PROCEDURE ViewAppointmentByDate(IN input_date DATE)
 LANGUAGE plpgsql
 AS $$
 BEGIN
     SELECT
-        a.APPOINTMENT_ID,
-        a.DATE_TIME,
-        a.PURPOSE,
-        a.STATUS,
-        CONCAT(p.FIRST_NAME, " ", p.LAST_NAME) AS PATIENT_NAME
-    FROM APPOINTMENT a
-    JOIN PATIENT p ON a.PATIENT_ID = p.PATIENT_ID
-    WHERE DATE(DATE_TIME) = INPUT_DATE; -- Date Format: "yyyy-mm-dd"
+        a.appointment_id,
+        a.date_time,
+        a.purpose,
+        a.status,
+        p.first_name || ' ' || p.last_name AS patient_name
+    FROM appointment a
+    JOIN patient p ON a.patient_id = p.patient_id
+    WHERE DATE(date_time) = input_date;
 END;
 $$;
 
-	-- View all appointment of a doctor
+-- View all appointments of a doctor
 CREATE OR REPLACE PROCEDURE ViewAppointmentByDoctorID(
-    IN INPUT_DOCTOR_ID INT
+    IN input_doctor_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
     SELECT 
-        APPOINTMENT_ID,
-        DATE_TIME,
-        PURPOSE,
-        STATUS,
-        PATIENT_ID
-    FROM APPOINTMENT
-    WHERE DOCTOR_ID = INPUT_DOCTOR_ID;
+        appointment_id,
+        date_time,
+        purpose,
+        status,
+        patient_id
+    FROM appointment
+    WHERE doctor_id = input_doctor_id;
 END;
 $$;
 
-    --  Filter view appointment
+-- Filter view appointments
 CREATE OR REPLACE PROCEDURE FilterViewAppointment(
-    IN INPUT_APPOINTMENT_ID INT, 
-    IN INPUT_STATUS VARCHAR(50),
-    IN INPUT_DOCTOR_ID INT,
-    IN INPUT_PATIENT_ID INT)
+    IN input_appointment_id INT, 
+    IN input_status VARCHAR(50),
+    IN input_doctor_id INT,
+    IN input_patient_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM APPOINTMENT
+    SELECT * FROM appointment
     WHERE
-        (INPUT_APPOINTMENT_ID IS NULL OR Appointment_ID = INPUT_APPOINTMENT_ID)
-        AND (INPUT_STATUS IS NULL OR INPUT_STATUS = '' OR Status = INPUT_STATUS)
-        AND (INPUT_DOCTOR_ID IS NULL OR Doctor_ID = INPUT_DOCTOR_ID)
-        AND (INPUT_PATIENT_ID IS NULL OR Patient_ID = INPUT_PATIENT_ID);
+        (input_appointment_id IS NULL OR appointment_id = input_appointment_id)
+        AND (input_status IS NULL OR input_status = '' OR status = input_status)
+        AND (input_doctor_id IS NULL OR doctor_id = input_doctor_id)
+        AND (input_patient_id IS NULL OR patient_id = input_patient_id);
 END;
 $$;
 
--- Medical Record
-	-- Add medical record
+-- ============================================
+-- MEDICAL RECORD PROCEDURES
+-- ============================================
+
+-- Add medical record
 CREATE OR REPLACE PROCEDURE AddMedicalRecord(
-    IN INPUT_PRESCRIPTION TEXT,
-    IN INPUT_DIAGNOSIS TEXT,
-    IN INPUT_LAB_RESULT VARCHAR(255),
-    IN INPUT_TREATMENT VARCHAR(255),
-    IN INPUT_PATIENT_ID INT,
-    IN INPUT_APPOINTMENT_ID INT
+    IN input_prescription TEXT,
+    IN input_diagnosis TEXT,
+    IN input_lab_result VARCHAR(255),
+    IN input_treatment VARCHAR(255),
+    IN input_patient_id INT,
+    IN input_appointment_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO MEDICAL_RECORD(
-        PRESCRIPTION,
-        DIAGNOSIS,
-        LAB_RESULT,
-        TREATMENT,
-        PATIENT_ID,
-        APPOINTMENT_ID
+    INSERT INTO medical_record(
+        prescription,
+        diagnosis,
+        lab_result,
+        treatment,
+        patient_id,
+        appointment_id
     )
     VALUES
     (
-        INPUT_PRESCRIPTION,
-        INPUT_DIAGNOSIS,
-        INPUT_LAB_RESULT,
-        INPUT_TREATMENT,
-        INPUT_PATIENT_ID,
-        INPUT_APPOINTMENT_ID
+        input_prescription,
+        input_diagnosis,
+        input_lab_result,
+        input_treatment,
+        input_patient_id,
+        input_appointment_id
     );
 END;
 $$;
 
-	-- Modify medical record
+-- Modify medical record
 CREATE OR REPLACE PROCEDURE UpdateMedicalRecordDetails(
-    IN INPUT_PRESCRIPTION TEXT,
-    IN INPUT_DIAGNOSIS TEXT,
-    IN INPUT_LAB_RESULT VARCHAR(255),
-    IN INPUT_TREATMENT VARCHAR(255),
-    IN INPUT_RECORD_ID INT
+    IN input_prescription TEXT,
+    IN input_diagnosis TEXT,
+    IN input_lab_result VARCHAR(255),
+    IN input_treatment VARCHAR(255),
+    IN input_record_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    UPDATE MEDICAL_RECORD
+    UPDATE medical_record
     SET 
-        PRESCRIPTION = IFNULL(INPUT_PRESCRIPTION, PRESCRIPTION),
-        DIAGNOSIS = IFNULL(INPUT_DIAGNOSIS, DIAGNOSIS),
-        LAB_RESULT = IFNULL(INPUT_LAB_RESULT, LAB_RESULT),
-        TREATMENT = IFNULL(INPUT_TREATMENT, TREATMENT)
-    WHERE  RECORD_ID = INPUT_RECORD_ID;
+        prescription = COALESCE(input_prescription, prescription),
+        diagnosis = COALESCE(input_diagnosis, diagnosis),
+        lab_result = COALESCE(input_lab_result, lab_result),
+        treatment = COALESCE(input_treatment, treatment)
+    WHERE record_id = input_record_id;
 END;
 $$;
 
-    -- View medical record by patient
-CREATE OR REPLACE PROCEDURE GetMedicalRecordByPatient(IN INPUT_PATIENT_ID INT)
+-- View medical record by patient
+CREATE OR REPLACE PROCEDURE GetMedicalRecordByPatient(IN input_patient_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM MEDICAL_RECORD WHERE PATIENT_ID = INPUT_PATIENT_ID;
+    SELECT * FROM medical_record WHERE patient_id = input_patient_id;
 END;
 $$;
 
-	-- View medical record of a doctor patient
-CREATE OR REPLACE PROCEDURE GetMedicalRecordByDoctor(IN INPUT_DOCTOR_ID INT)
+-- View medical records of a doctor's patients
+CREATE OR REPLACE PROCEDURE GetMedicalRecordByDoctor(IN input_doctor_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM MEDICAL_RECORD
-    JOIN PATIENT p USING (PATIENT_ID)
-    JOIN STAFF s USING (DOCTOR_ID)
-    WHERE s.DOCTOR_ID = INPUT_DOCTOR_ID;
+    SELECT mr.* FROM medical_record mr
+    JOIN patient p ON mr.patient_id = p.patient_id
+    WHERE p.doctor_id = input_doctor_id;
 END;
 $$;
 
-	-- Filter view medical record
-CREATE OR REPLACE PROCEDURE FilterViewMedicalRecord(IN INPUT_RECORD_ID INT, IN INPUT_PATIENT_ID INT, IN INPUT_APPOINTMENT_ID INT)
+-- Filter view medical records
+CREATE OR REPLACE PROCEDURE FilterViewMedicalRecord(
+    IN input_record_id INT, 
+    IN input_patient_id INT, 
+    IN input_appointment_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM MEDICAL_RECORD 
+    SELECT * FROM medical_record 
     WHERE 
-        (INPUT_RECORD_ID IS NULL OR RECORD_ID = INPUT_RECORD_ID)
-        AND (INPUT_PATIENT_ID IS NULL OR PATIENT_ID = INPUT_PATIENT_ID)
-        AND (INPUT_APPOINTMENT_ID IS NULL OR APPOINTMENT_ID = INPUT_APPOINTMENT_ID);
+        (input_record_id IS NULL OR record_id = input_record_id)
+        AND (input_patient_id IS NULL OR patient_id = input_patient_id)
+        AND (input_appointment_id IS NULL OR appointment_id = input_appointment_id);
 END;
 $$;
 
--- Patient
-	-- Inset new patient
+-- ============================================
+-- PATIENT PROCEDURES
+-- ============================================
+
+-- Insert new patient
 CREATE OR REPLACE PROCEDURE InsertNewPatient(
-	IN INPUT_LAST_NAME VARCHAR(50),
-    IN INPUT_FIRST_NAME VARCHAR(50),
-	IN INPUT_HEIGHT DECIMAL(10, 2),
-	IN INPUT_WEIGHT DECIMAL(10, 2),
-	IN INPUT_DATE_OF_BIRTH DATE,
-	IN INPUT_ADDRESS VARCHAR(255),
-	IN INPUT_CONTACT VARCHAR(50),
-	IN INPUT_EMAIL VARCHAR(50),
-	IN INPUT_DOCTOR_ID INT
+    IN input_last_name VARCHAR(50),
+    IN input_first_name VARCHAR(50),
+    IN input_height DECIMAL(10, 2),
+    IN input_weight DECIMAL(10, 2),
+    IN input_date_of_birth DATE,
+    IN input_address VARCHAR(255),
+    IN input_contact VARCHAR(50),
+    IN input_email VARCHAR(50),
+    IN input_doctor_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-	INSERT INTO PATIENT(LAST_NAME, FIRST_NAME, HEIGHT, WEIGHT, DATE_OF_BIRTH, ADDRESS, CONTACT, EMAIL, DOCTOR_ID)
-	VALUES (INPUT_LAST_NAME, INPUT_FIRST_NAME, INPUT_HEIGHT, INPUT_WEIGHT, INPUT_DATE_OF_BIRTH, INPUT_ADDRESS, INPUT_CONTACT, INPUT_EMAIL, INPUT_DOCTOR_ID);
+    INSERT INTO patient(last_name, first_name, height, weight, date_of_birth, address, contact, email, doctor_id)
+    VALUES (input_last_name, input_first_name, input_height, input_weight, input_date_of_birth, input_address, input_contact, input_email, input_doctor_id);
 END;
 $$;
 
-	-- View patient of a specific doctor
-CREATE OR REPLACE PROCEDURE GetPatientsByDoctor(IN INPUT_DOCTOR_ID INT)
+-- View patients of a specific doctor
+CREATE OR REPLACE PROCEDURE GetPatientsByDoctor(IN input_doctor_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM PATIENT
-    WHERE DOCTOR_ID = INPUT_DOCTOR_ID;
+    SELECT * FROM patient
+    WHERE doctor_id = input_doctor_id;
 END;
 $$;
 
-	-- Update patient vitals, height and weight
+-- Update patient vitals (height and weight)
 CREATE OR REPLACE PROCEDURE UpdatePatientVitals(
-    IN INPUT_HEIGHT DECIMAL(10,2),
-    IN INPUT_WEIGHT DECIMAL(10,2),
-    IN INPUT_PATIENT_ID INT
+    IN input_height DECIMAL(10,2),
+    IN input_weight DECIMAL(10,2),
+    IN input_patient_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-    UPDATE PATIENT
+    UPDATE patient
     SET 
-        HEIGHT = IFNULL(INPUT_HEIGHT, HEIGHT),
-        WEIGHT = IFNULL(INPUT_WEIGHT, WEIGHT)
-    WHERE PATIENT_ID = INPUT_PATIENT_ID;
+        height = COALESCE(input_height, height),
+        weight = COALESCE(input_weight, weight)
+    WHERE patient_id = input_patient_id;
 END;
 $$;
 
-    -- Update patient info, address email contact
+-- Update patient info (address, email, contact)
 CREATE OR REPLACE PROCEDURE UpdatePatientInfo(
-    IN INPUT_ADDRESS VARCHAR(255),
-    IN INPUT_EMAIL VARCHAR(50),
-    IN INPUT_CONTACT VARCHAR(50),
-    IN INPUT_PATIENT_ID INT
+    IN input_address VARCHAR(255),
+    IN input_email VARCHAR(50),
+    IN input_contact VARCHAR(50),
+    IN input_patient_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-    UPDATE PATIENT
+    UPDATE patient
     SET
-        ADDRESS = IFNULL(INPUT_ADDRESS, ADDRESS),
-        EMAIL = IFNULL(INPUT_EMAIL, EMAIL),
-        CONTACT = IFNULL(INPUT_CONTACT, CONTACT)
-    WHERE PATIENT_ID = INPUT_PATIENT_ID;
+        address = COALESCE(input_address, address),
+        email = COALESCE(input_email, email),
+        contact = COALESCE(input_contact, contact)
+    WHERE patient_id = input_patient_id;
 END;
 $$;
 
-    -- View patient by ID
-CREATE OR REPLACE PROCEDURE ViewPatientByID(IN INPUT_PATIENT_ID INT)
+-- View patient by ID
+CREATE OR REPLACE PROCEDURE ViewPatientByID(IN input_patient_id INT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM PATIENT
-    WHERE PATIENT_ID = INPUT_PATIENT_ID;
+    SELECT * FROM patient
+    WHERE patient_id = input_patient_id;
 END;
 $$;
 
-    -- filter view patient
+-- Filter view patients
 CREATE OR REPLACE PROCEDURE FilterViewPatient(
-    IN INPUT_PATIENT_ID INT,
-    IN INPUT_LAST_NAME VARCHAR(50),
-    IN INPUT_FIRST_NAME VARCHAR(50),
-    IN INPUT_DOCTOR_ID INT
+    IN input_patient_id INT,
+    IN input_last_name VARCHAR(50),
+    IN input_first_name VARCHAR(50),
+    IN input_doctor_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM PATIENT
+    SELECT * FROM patient
     WHERE
-        (INPUT_PATIENT_ID IS NULL OR PATIENT_ID = INPUT_PATIENT_ID)
-        AND (INPUT_LAST_NAME IS NULL OR LAST_NAME = INPUT_LAST_NAME)
-        AND (INPUT_FIRST_NAME IS NULL OR FIRST_NAME = INPUT_FIRST_NAME)
-        AND (INPUT_DOCTOR_ID IS NULL OR DOCTOR_ID = INPUT_DOCTOR_ID);
+        (input_patient_id IS NULL OR patient_id = input_patient_id)
+        AND (input_last_name IS NULL OR last_name = input_last_name)
+        AND (input_first_name IS NULL OR first_name = input_first_name)
+        AND (input_doctor_id IS NULL OR doctor_id = input_doctor_id);
 END;
 $$;
 
--- Billing Table
-	-- Insert new billing record
+-- ============================================
+-- BILLING PROCEDURES
+-- ============================================
+
+-- Insert new billing record
 CREATE OR REPLACE PROCEDURE InsertBillingRecord(
-    IN INPUT_TREATMENT_FEE DECIMAL(10,2),
-    IN INPUT_MEDICATION_FEE DECIMAL(10,2),
-    IN INPUT_LAB_TEST_FEE DECIMAL(10,2),
-    IN INPUT_CONSULTATION_FEE DECIMAL(10,2),
-    IN INPUT_RECEPTIONIST_ID INT,
-    IN INPUT_PATIENT_ID INT
+    IN input_treatment_fee DECIMAL(10,2),
+    IN input_medication_fee DECIMAL(10,2),
+    IN input_lab_test_fee DECIMAL(10,2),
+    IN input_consultation_fee DECIMAL(10,2),
+    IN input_receptionist_id INT,
+    IN input_patient_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-    INSERT INTO BILLING(
-        TREATMENT_FEE,
-        MEDICATION_FEE,
-        LAB_TEST_FEE,
-        CONSULTATION_FEE,
-        RECEPTIONIST_ID,
-        PATIENT_ID,
-        PAYMENT_STATUS
+    INSERT INTO billing(
+        treatment_fee,
+        medication_fee,
+        lab_test_fee,
+        consultation_fee,
+        receptionist_id,
+        patient_id,
+        payment_status
     ) VALUES (
-        INPUT_TREATMENT_FEE,
-        INPUT_MEDICATION_FEE,
-        INPUT_LAB_TEST_FEE,
-        INPUT_CONSULTATION_FEE,
-        INPUT_RECEPTIONIST_ID,
-        INPUT_PATIENT_ID,
-        "Unpaid"
+        input_treatment_fee,
+        input_medication_fee,
+        input_lab_test_fee,
+        input_consultation_fee,
+        input_receptionist_id,
+        input_patient_id,
+        'Unpaid'
     );
 END;
 $$;
 
-	-- Update billing status
+-- Update billing status
 CREATE OR REPLACE PROCEDURE UpdateBillingStatus(
-    IN INPUT_STATUS VARCHAR(10),
-    IN INPUT_BILLING_ID INT
+    IN input_status VARCHAR(10),
+    IN input_billing_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    UPDATE BILLING
+    UPDATE billing
     SET
-        PAYMENT_STATUS = IFNULL(INPUT_STATUS, PAYMENT_STATUS)
-    WHERE BILLING_ID = INPUT_BILLING_ID;
+        payment_status = COALESCE(input_status, payment_status)
+    WHERE billing_id = input_billing_id;
 END;
 $$;
 
-	-- Get billing by status
+-- Get billing by status
 CREATE OR REPLACE PROCEDURE GetBillingByStatus(
-    IN INPUT_STATUS VARCHAR(20)
+    IN input_status VARCHAR(20)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT 
-        * 
-    FROM BILLING
-    WHERE PAYMENT_STATUS = INPUT_STATUS;
+    SELECT * FROM billing
+    WHERE payment_status = input_status;
 END;
 $$;
 
-	-- Get billing by patient
+-- Get billing by patient
 CREATE OR REPLACE PROCEDURE GetBillingByPatient(
-    IN INPUT_PATIENT_ID INT
+    IN input_patient_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT
-        * 
-    FROM BILLING B
-    WHERE PATIENT_ID = INPUT_PATIENT_ID;
+    SELECT * FROM billing
+    WHERE patient_id = input_patient_id;
 END;
 $$;
 
-    -- Filter view billing
+-- Filter view billing
 CREATE OR REPLACE PROCEDURE FilterViewBilling(
-    IN INPUT_BILLING_ID INT,
-    IN INPUT_PAYMENT_STATUS VARCHAR(10),
-    IN INPUT_RECEPTIONIST_ID INT,
-    IN INPUT_PATIENT_ID INT
+    IN input_billing_id INT,
+    IN input_payment_status VARCHAR(10),
+    IN input_receptionist_id INT,
+    IN input_patient_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    SELECT * FROM BILLING
+    SELECT * FROM billing
     WHERE
-        (INPUT_BILLING_ID IS NULL OR BILLING_ID = INPUT_BILLING_ID)
-        AND (INPUT_PAYMENT_STATUS IS NULL OR INPUT_PAYMENT_STATUS = '' OR PAYMENT_STATUS = INPUT_PAYMENT_STATUS)
-        AND (INPUT_RECEPTIONIST_ID IS NULL OR RECEPTIONIST_ID = INPUT_RECEPTIONIST_ID)
-        AND (INPUT_PATIENT_ID IS NULL OR PATIENT_ID = INPUT_PATIENT_ID);
+        (input_billing_id IS NULL OR billing_id = input_billing_id)
+        AND (input_payment_status IS NULL OR input_payment_status = '' OR payment_status = input_payment_status)
+        AND (input_receptionist_id IS NULL OR receptionist_id = input_receptionist_id)
+        AND (input_patient_id IS NULL OR patient_id = input_patient_id);
 END;
 $$;
 
--- Department
-    -- Add department
+-- ============================================
+-- DEPARTMENT PROCEDURES
+-- ============================================
+
+-- Add department
 CREATE OR REPLACE PROCEDURE AddDepartment(
-    IN INPUT_DEPARTMENT_NAME VARCHAR(100),
-    IN INPUT_LOCATION VARCHAR(255)
+    IN input_department_name VARCHAR(100),
+    IN input_location VARCHAR(255)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    INSERT INTO DEPARTMENT(DEPARTMENT_NAME, LOCATION)
-    VALUES (INPUT_DEPARTMENT_NAME, INPUT_LOCATION);
+    INSERT INTO department(department_name, location)
+    VALUES (input_department_name, input_location);
 END;
 $$;
 
-    -- update department name
+-- Update department name
 CREATE OR REPLACE PROCEDURE UpdateDepartmentName(
-    IN INPUT_DEPARTMENT_ID INT,
-    IN INPUT_DEPARTMENT_NAME VARCHAR(100)
+    IN input_department_id INT,
+    IN input_department_name VARCHAR(100)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-    UPDATE DEPARTMENT
-    SET DEPARTMENT_NAME = IFNULL(INPUT_DEPARTMENT_NAME, DEPARTMENT_NAME)
-    WHERE DEPARTMENT_ID = INPUT_DEPARTMENT_ID;
+    UPDATE department
+    SET department_name = COALESCE(input_department_name, department_name)
+    WHERE department_id = input_department_id;
 END;
 $$;
-	
-    -- Filter view department
+
+-- Filter view departments
 CREATE OR REPLACE PROCEDURE FilterViewDepartment(
-	IN INPUT_DEPARTMENT_ID INT,
-    IN INPUT_DEPARTMENT_NAME VARCHAR(100),
-    IN INPUT_LOCATION VARCHAR(255)
+    IN input_department_id INT,
+    IN input_department_name VARCHAR(100),
+    IN input_location VARCHAR(255)
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-	SELECT * FROM DEPARTMENT
+    SELECT * FROM department
     WHERE
-		(INPUT_DEPARTMENT_ID IS NULL OR DEPARTMENT_ID = INPUT_DEPARTMENT_ID)
-        AND (INPUT_DEPARTMENT_NAME IS NULL OR DEPARTMENT_NAME = INPUT_DEPARTMENT_NAME)
-        AND (INPUT_LOCATION IS NULL OR LOCATION = INPUT_LOCATION);
+        (input_department_id IS NULL OR department_id = input_department_id)
+        AND (input_department_name IS NULL OR department_name = input_department_name)
+        AND (input_location IS NULL OR location = input_location);
 END;
 $$;
 
--- Staff
-	-- Add new staff
+-- ============================================
+-- STAFF PROCEDURES
+-- ============================================
+
+-- Add new staff
 CREATE OR REPLACE PROCEDURE AddNewStaff(
-    IN INPUT_LAST_NAME VARCHAR(50),
-    IN INPUT_FIRST_NAME VARCHAR(50),
-    IN INPUT_ROLE VARCHAR(100),
-    IN INPUT_CONTACT VARCHAR(50),
-    IN INPUT_DEPARTMENT_ID INT,
-    IN INPUT_DOCTOR_ID INT
+    IN input_last_name VARCHAR(50),
+    IN input_first_name VARCHAR(50),
+    IN input_role VARCHAR(100),
+    IN input_contact VARCHAR(50),
+    IN input_department_id INT,
+    IN input_doctor_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-	INSERT INTO STAFF (LAST_NAME, FIRST_NAME, ROLE, CONTACT, DEPARTMENT_ID, DOCTOR_ID)
-	VALUES (INPUT_LAST_NAME, INPUT_FIRST_NAME, INPUT_ROLE, INPUT_CONTACT, INPUT_DEPARTMENT_ID, INPUT_DOCTOR_ID);
+    INSERT INTO staff (last_name, first_name, role, contact, department_id, doctor_id)
+    VALUES (input_last_name, input_first_name, input_role, input_contact, input_department_id, input_doctor_id);
 END;
 $$;
 
-	-- Update staff info
-CREATE PROCEDURE UpdateStaffInfo(
-	IN INPUT_STAFF_ID INT,
-    IN INPUT_LAST_NAME VARCHAR(50),
-    IN INPUT_FIRST_NAME VARCHAR(50),
-    IN INPUT_ROLE VARCHAR(100),
-    IN INPUT_CONTACT VARCHAR(50),
-    IN INPUT_DEPARTMENT_ID INT,
-    IN INPUT_DOCTOR_ID INT
+-- Update staff info
+CREATE OR REPLACE PROCEDURE UpdateStaffInfo(
+    IN input_staff_id INT,
+    IN input_last_name VARCHAR(50),
+    IN input_first_name VARCHAR(50),
+    IN input_role VARCHAR(100),
+    IN input_contact VARCHAR(50),
+    IN input_department_id INT,
+    IN input_doctor_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN
-	UPDATE STAFF
-	SET
-		LAST_NAME = IFNULL(INPUT_LAST_NAME, LAST_NAME),
-        FIRST_NAME = IFNULL(INPUT_FIRST_NAME, FIRST_NAME),
-		ROLE = IFNULL(INPUT_ROLE, ROLE),
-        CONTACT = IFNULL(INPUT_CONTACT, CONTACT),
-        DEPARTMENT_ID = IFNULL(INPUT_DEPARTMENT_ID, DEPARTMENT_ID),
-        DOCTOR_ID = IFNULL(INPUT_DOCTOR_ID, DOCTOR_ID)
-	WHERE STAFF_ID = INPUT_STAFF_ID;
+    UPDATE staff
+    SET
+        last_name = COALESCE(input_last_name, last_name),
+        first_name = COALESCE(input_first_name, first_name),
+        role = COALESCE(input_role, role),
+        contact = COALESCE(input_contact, contact),
+        department_id = COALESCE(input_department_id, department_id),
+        doctor_id = COALESCE(input_doctor_id, doctor_id)
+    WHERE staff_id = input_staff_id;
 END;
 $$;
 
-	-- Filter view staff
-CREATE PROCEDURE FilterViewStaff(
-	IN INPUT_STAFF_ID INT,
-    IN INPUT_LAST_NAME VARCHAR(50),
-    IN INPUT_FIRST_NAME VARCHAR(50),
-    IN INPUT_ROLE VARCHAR(100),
-    IN INPUT_CONTACT VARCHAR(50),
-    IN INPUT_DEPARTMENT_ID INT,
-    IN INPUT_DOCTOR_ID INT
+-- Filter view staff
+CREATE OR REPLACE PROCEDURE FilterViewStaff(
+    IN input_staff_id INT,
+    IN input_last_name VARCHAR(50),
+    IN input_first_name VARCHAR(50),
+    IN input_role VARCHAR(100),
+    IN input_contact VARCHAR(50),
+    IN input_department_id INT,
+    IN input_doctor_id INT
 )
 LANGUAGE plpgsql
 AS $$
 BEGIN 
-	SELECT * FROM STAFF
+    SELECT * FROM staff
     WHERE
-		(INPUT_STAFF_ID IS NULL OR STAFF_ID = INPUT_STAFF_ID)
-        AND (INPUT_LAST_NAME IS NULL OR LAST_NAME = INPUT_LAST_NAME)
-        AND (INPUT_FIRST_NAME IS NULL OR FIRST_NAME = INPUT_FIRST_NAME)
-        AND (INPUT_ROLE IS NULL OR ROLE = INPUT_ROLE)
-        AND (INPUT_CONTACT IS NULL OR CONTACT = INPUT_CONTACT)
-        AND (INPUT_DEPARTMENT_ID IS NULL OR DEPARTMENT_ID = INPUT_DEPARTMENT_ID)
-        AND (INPUT_DOCTOR_ID IS NULL OR DOCTOR_ID = INPUT_DOCTOR_ID);
+        (input_staff_id IS NULL OR staff_id = input_staff_id)
+        AND (input_last_name IS NULL OR last_name = input_last_name)
+        AND (input_first_name IS NULL OR first_name = input_first_name)
+        AND (input_role IS NULL OR role = input_role)
+        AND (input_contact IS NULL OR contact = input_contact)
+        AND (input_department_id IS NULL OR department_id = input_department_id)
+        AND (input_doctor_id IS NULL OR doctor_id = input_doctor_id);
 END;
 $$;

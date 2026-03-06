@@ -1,11 +1,17 @@
+-- ============================================
+-- HOSPITAL MANAGEMENT SYSTEM - COMPLEX DQL
+-- Database: PostgreSQL
+-- ============================================
+
 -- 1. List all appointments along with the full name of the doctor and the patient, including department name
-SELECT a.*, s.FIRST_NAME || ' ' || s.LAST_NAME AS doctor_name, p.FIRST_NAME || ' ' || p.LAST_NAME AS patient_name, d.DEPARTMENT_NAME FROM APPOINTMENT a
-JOIN STAFF s ON a.DOCTOR_ID = s.STAFF_ID
-JOIN PATIENT p USING (PATIENT_ID)
-JOIN DEPARTMENT d ON d.DEPARTMENT_ID = s.DEPARTMENT_ID;
+SELECT a.*, s.first_name || ' ' || s.last_name AS doctor_name, 
+       p.first_name || ' ' || p.last_name AS patient_name, d.department_name 
+FROM appointment a
+JOIN staff s ON a.doctor_id = s.staff_id
+JOIN patient p USING (patient_id)
+JOIN department d ON d.department_id = s.department_id;
 
 -- 2. Get all patients along with their latest appointment date and the doctor they saw, including doctor's specialization
--- Involves JOINs and filtering using MAX(date_time) per patient
 SELECT 
     p.*,
     a.date_time AS latest_appointment,
@@ -30,7 +36,7 @@ FROM staff nurse
 JOIN staff doc ON nurse.doctor_id = doc.staff_id
 WHERE nurse.doctor_id IS NOT NULL;
 
--- 4. Display all patients who have at least one medical record, including diagnosis and related doctor’s name
+-- 4. Display all patients who have at least one medical record, including diagnosis and related doctor's name
 SELECT DISTINCT
     p.patient_id,
     p.first_name || ' ' || p.last_name AS patient_name,
@@ -55,6 +61,7 @@ SELECT
     COUNT(p.patient_id) AS patient_count
 FROM staff s
 JOIN patient p ON s.staff_id = p.doctor_id
+WHERE s.role = 'Doctor'
 GROUP BY s.staff_id
 HAVING COUNT(p.patient_id) > 5;
 
@@ -98,7 +105,7 @@ SELECT
 FROM patient_totals pt, avg_billing ab
 WHERE pt.total_billing > ab.avg_total;
 
--- 9. For each doctor, show the total number of appointments and total billed amount (consultation + treatment + medication + lab)
+-- 9. For each doctor, show the total number of appointments and total billed amount
 SELECT
     s.staff_id AS doctor_id,
     s.first_name || ' ' || s.last_name AS doctor_name,
@@ -116,7 +123,7 @@ SELECT
     COUNT(*) AS appointment_count
 FROM appointment
 WHERE date_time >= CURRENT_DATE - INTERVAL '30 days'
-GROUP BY appointment_date
+GROUP BY DATE(date_time)
 ORDER BY appointment_date;
 
 -- 11. Calculate the average, max, and min consultation fee across all patients
@@ -126,8 +133,8 @@ SELECT
     MIN(consultation_fee) AS min_consultation_fee
 FROM billing;
 
--- 12. Create a function that returns the total bill amount for a given patient_id
-CREATE OR REPLACE FUNCTION get_total_bill(patient INT)
+-- 12. Function that returns the total bill amount for a given patient_id
+CREATE OR REPLACE FUNCTION get_total_bill(patient_id_param INT)
 RETURNS NUMERIC AS $$
 DECLARE
     total NUMERIC;
@@ -135,14 +142,14 @@ BEGIN
     SELECT SUM(treatment_fee + medication_fee + lab_test_fee + consultation_fee)
     INTO total
     FROM billing
-    WHERE patient_id = patient;
+    WHERE patient_id = patient_id_param;
     
     RETURN COALESCE(total, 0);
 END;
 $$ LANGUAGE plpgsql;
 
--- 13. Create a function that returns the number of patients assigned to a specific doctor
-CREATE OR REPLACE FUNCTION get_patient_count(doctor INT)
+-- 13. Function that returns the number of patients assigned to a specific doctor
+CREATE OR REPLACE FUNCTION get_patient_count(doctor_id_param INT)
 RETURNS INT AS $$
 DECLARE
     count_patients INT;
@@ -150,27 +157,17 @@ BEGIN
     SELECT COUNT(*)
     INTO count_patients
     FROM patient
-    WHERE doctor_id = doctor;
+    WHERE doctor_id = doctor_id_param;
     
     RETURN COALESCE(count_patients, 0);
 END;
 $$ LANGUAGE plpgsql;
 
--- 14. Create a trigger that updates the last_modified column in the staff table whenever a row is updated
-CREATE OR REPLACE FUNCTION update_last_modified()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.last_modified = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+-- 14. Trigger function that updates the last_modified column (defined in TRIGGERS.sql)
+-- Note: This function is defined in TRIGGERS.sql, do not recreate here
+-- CREATE OR REPLACE FUNCTION update_last_modified() ...
 
-CREATE TRIGGER trg_update_last_modified
-BEFORE UPDATE ON staff
-FOR EACH ROW
-EXECUTE FUNCTION update_last_modified();
-
--- 15. Write a stored procedure that accepts a patient’s ID and returns their full billing summary along with appointment count and doctor’s name
+-- 15. Stored procedure that returns patient's full billing summary along with appointment count and doctor's name
 CREATE OR REPLACE PROCEDURE get_patient_billing_summary(IN p_patient_id INT)
 LANGUAGE plpgsql
 AS $$
